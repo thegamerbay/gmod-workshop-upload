@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Upload Addon to Steam Workshop
-        uses: thegamerbay/gmod-upload@v1
+        uses: thegamerbay/gmod-workshop-upload@v1
         with:
           id: '1234567890' # Replace with your Workshop item ID
           changelog: 'Deployment via Github to latest changes'
@@ -64,7 +64,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Update Addon on Steam Workshop
-        uses: thegamerbay/gmod-upload@v1
+        uses: thegamerbay/gmod-workshop-upload@v1
         with:
           id: '1234567890'
           title: 'My Super Mod 2.0'
