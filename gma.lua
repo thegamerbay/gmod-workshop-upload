@@ -55,7 +55,33 @@ local function decode(json --[[@param json string]]) ---@return table
 	local object, array
 	local function number() return tonumber(consume("^(%-?%d+%.%d+)") or consume("^(%-?%d+)")) end
 	local function bool() return consume("^(true)") or consume("^(false)") end
-	local function string() return consume("^\"([^\"]*)\"") end
+	
+	local function string()
+		if not consume("^\"") then return nil end
+		local out = {}
+		while true do
+			local s, e, chunk, slash = json:find("^([^\"\\]*)(\\?)", ptr)
+			table.insert(out, chunk)
+			ptr = e + 1
+			if slash == "\\" then
+				local esc = json:sub(ptr, ptr)
+				if esc == "n" then table.insert(out, "\n")
+				elseif esc == "r" then table.insert(out, "\r")
+				elseif esc == "t" then table.insert(out, "\t")
+				elseif esc == "\"" then table.insert(out, "\"")
+				elseif esc == "\\" then table.insert(out, "\\")
+				else table.insert(out, "\\") table.insert(out, esc) end
+				ptr = ptr + 1
+			else
+				if json:sub(ptr, ptr) == "\"" then
+					ptr = ptr + 1
+					return table.concat(out)
+				end
+				error("Unclosed string at " .. ptr)
+			end
+		end
+	end
+	
 	local function value() return object() or string() or number() or bool() or array() end
 
 	function object()
@@ -85,12 +111,43 @@ local function decode(json --[[@param json string]]) ---@return table
 	return object() or array()
 end
 
+local function encode(tbl)
+	local function escape_str(s)
+		return '"' .. s:gsub("\\", "\\\\"):gsub('"', '\\"'):gsub("\n", "\\n"):gsub("\r", "\\r"):gsub("\t", "\\t") .. '"'
+	end
+	
+	local is_arr = false
+	if #tbl > 0 then
+		is_arr = true
+	end
+    
+	local parts = {}
+	if is_arr then
+		for _, v in ipairs(tbl) do
+			if type(v) == "string" then table.insert(parts, escape_str(v))
+			elseif type(v) == "table" then table.insert(parts, encode(v)) end
+		end
+		return "[" .. table.concat(parts, ",") .. "]"
+	else
+		for k, v in pairs(tbl) do
+			if type(k) == "string" then
+				local val
+				if type(v) == "string" then val = escape_str(v)
+				elseif type(v) == "table" then val = encode(v) 
+				elseif type(v) == "number" or type(v) == "boolean" then val = tostring(v) end
+				if val then
+					table.insert(parts, escape_str(k) .. ":" .. val)
+				end
+			end
+		end
+		return "{" .. table.concat(parts, ",") .. "}"
+	end
+end
+
 local function glob2pattern(s --[[@param s string]])
 	local inner = s
-		:gsub("%.", "%%.")
-		:gsub("%*%*", "\001") -- temporary placeholder
-		:gsub("%*", "[^/]*")  -- * matches anything except /
-		:gsub("\001", ".*")   -- ** matches anything including /
+		:gsub("[%-%^%$%(%)%%%.%[%]%+%?]", "%%%1") -- escape magic characters properly
+		:gsub("%*", ".*")  -- * matches anything
 
 	return "^%./" .. inner .. "$"
 end
@@ -234,10 +291,18 @@ do
 	end
 
 	local handle = assert(io.open(OUTPUT_FILE, "wb"), "Failed to create/overwrite output file")
+	
+	-- Pack description metadata as JSON according to gmad standard
+	local desc_json = encode({
+		description = addon.description or "",
+		type = addon.type or "",
+		tags = addon.tags or {}
+	})
+	
 	handle:write(
 		pack(
 			addon.title or "No title provided",
-			addon.description or "No description provided",
+			desc_json,
 			addon.author or (addon.authors and table.concat(addon.authors, ", ")) or "No author provided",
 			files
 		)

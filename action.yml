@@ -91,18 +91,18 @@ runs:
         echo '  "publishedfileid" "${{ inputs.id }}"' >> workshop.vdf
         echo '  "contentfolder" "'$(pwd)'/${{ inputs.id }}.gma"' >> workshop.vdf
 
-        # 3. Add optional parameters (escaping internal quotes)
+        # 3. Add optional parameters (replacing double quotes with single quotes for VDF safety)
         if [ -n "$INPUT_CHANGELOG" ]; then
-          echo "  \"changenote\" \"${INPUT_CHANGELOG//\"/\\\"}\"" >> workshop.vdf
+          echo "  \"changenote\" \"${INPUT_CHANGELOG//\"/\'}\"" >> workshop.vdf
         fi
 
         if [ -n "$INPUT_TITLE" ]; then
-          echo "  \"title\" \"${INPUT_TITLE//\"/\\\"}\"" >> workshop.vdf
+          echo "  \"title\" \"${INPUT_TITLE//\"/\'}\"" >> workshop.vdf
         fi
 
         if [ -n "$FINAL_DESC" ]; then
           # Use printf as it works safer with multi-line text (line breaks in description)
-          printf '  "description" "%s"\n' "${FINAL_DESC//\"/\\\"}" >> workshop.vdf
+          printf '  "description" "%s"\n' "${FINAL_DESC//\"/\'}" >> workshop.vdf
         fi
 
         if [ -n "$INPUT_PREVIEWFILE" ]; then
@@ -115,7 +115,7 @@ runs:
         fi
 
         if [ -n "$INPUT_METADATA" ]; then
-          echo "  \"metadata\" \"${INPUT_METADATA//\"/\\\"}\"" >> workshop.vdf
+          echo "  \"metadata\" \"${INPUT_METADATA//\"/\'}\"" >> workshop.vdf
         fi
 
         echo '}' >> workshop.vdf
