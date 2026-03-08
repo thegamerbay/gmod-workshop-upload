@@ -1,0 +1,27 @@
+# Lua
+*.luac
+
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*~
+.DS_Store
+Thumbs.db
+
+# Garry's Mod Addon specific (ignore output artifacts by default, usually useful)
+*.gma
+workshop.vdf
+
+# Action testing / local temp files
+/temp/
+/tmp/
+
+# If node is ever used for action meta-tooling
+node_modules/
+npm-debug.log
+yarn-error.log

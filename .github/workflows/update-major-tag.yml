@@ -1,0 +1,40 @@
+name: Update Major Tag
+
+on:
+    release:
+        types: [published]
+
+jobs:
+    update-tag:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write # Needed for the action to push tags back to the repository
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0 # Must fetch all history to work with tags properly
+
+            - name: Update Major Tag
+              run: |
+                  # Get the tag name from the release event (e.g., v1.2.3)
+                  TAG="${{ github.event.release.tag_name }}"
+
+                  # Extract the major part using regex (results in v1)
+                  MAJOR_TAG=$(echo "$TAG" | grep -o '^v[0-9]\+')
+
+                  if [ -z "$MAJOR_TAG" ]; then
+                    echo "Failed to extract major version from tag $TAG. Skipping."
+                    exit 0
+                  fi
+
+                  echo "Moving tag $MAJOR_TAG to $TAG..."
+
+                  # Configure Git as the GitHub Actions bot
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+
+                  # Forcefully create the major tag on the same commit and push it
+                  git tag -f "$MAJOR_TAG" "$TAG"
+                  git push origin -f "$MAJOR_TAG"

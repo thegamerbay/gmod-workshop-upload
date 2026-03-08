@@ -17,6 +17,26 @@ inputs:
     description: "Path of addon.json, or json file to treat as such."
     required: false
     default: "addon.json"
+  
+  # --- New parameters ---
+  title:
+    description: "Update the title of the workshop item"
+    required: false
+  description:
+    description: "Update the description of the workshop item"
+    required: false
+  description_file:
+    description: "Local path to a text file containing the description (overrides 'description' input if provided)"
+    required: false
+  previewfile:
+    description: "Local path to a preview image (e.g., preview.jpg)"
+    required: false
+  visibility:
+    description: "Visibility of the workshop item (0 = Public, 1 = Friends Only, 2 = Private, 3 = Unlisted)"
+    required: false
+  metadata:
+    description: "Additional hidden metadata for the workshop item"
+    required: false
 
 runs:
   using: "composite"
@@ -49,15 +69,60 @@ runs:
 
     - name: Create .vdf file
       shell: bash
+      # Pass variables via env for safety (so that special characters and line breaks do not break bash)
+      env:
+        INPUT_CHANGELOG: ${{ inputs.changelog }}
+        INPUT_TITLE: ${{ inputs.title }}
+        INPUT_DESCRIPTION: ${{ inputs.description }}
+        INPUT_DESCRIPTION_FILE: ${{ inputs.description_file }}
+        INPUT_PREVIEWFILE: ${{ inputs.previewfile }}
+        INPUT_VISIBILITY: ${{ inputs.visibility }}
+        INPUT_METADATA: ${{ inputs.metadata }}
       run: |
-        cat > workshop.vdf << EOF
-          "workshopitem" {
-            "appid" "4000"
-            "publishedfileid" "${{ inputs.id }}"
-            "contentfolder" "`pwd`/${{ inputs.id }}.gma"
-            "changenote" "${{ inputs.changelog }}"
-          }
-        EOF
+        # 1. Determine where to get the description from
+        FINAL_DESC="$INPUT_DESCRIPTION"
+        if [ -n "$INPUT_DESCRIPTION_FILE" ] && [ -f "$INPUT_DESCRIPTION_FILE" ]; then
+          FINAL_DESC=$(cat "$INPUT_DESCRIPTION_FILE")
+        fi
+
+        # 2. Start generating VDF
+        echo '"workshopitem" {' > workshop.vdf
+        echo '  "appid" "4000"' >> workshop.vdf
+        echo '  "publishedfileid" "${{ inputs.id }}"' >> workshop.vdf
+        echo '  "contentfolder" "'$(pwd)'/${{ inputs.id }}.gma"' >> workshop.vdf
+
+        # 3. Add optional parameters (escaping internal quotes)
+        if [ -n "$INPUT_CHANGELOG" ]; then
+          echo "  \"changenote\" \"${INPUT_CHANGELOG//\"/\\\"}\"" >> workshop.vdf
+        fi
+
+        if [ -n "$INPUT_TITLE" ]; then
+          echo "  \"title\" \"${INPUT_TITLE//\"/\\\"}\"" >> workshop.vdf
+        fi
+
+        if [ -n "$FINAL_DESC" ]; then
+          # Use printf as it works safer with multi-line text (line breaks in description)
+          printf '  "description" "%%s"\n' "${FINAL_DESC//\"/\\\"}" >> workshop.vdf
+        fi
+
+        if [ -n "$INPUT_PREVIEWFILE" ]; then
+          # SteamCMD requires an absolute path to the preview file
+          echo "  \"previewfile\" \"$(realpath "$INPUT_PREVIEWFILE")\"" >> workshop.vdf
+        fi
+
+        if [ -n "$INPUT_VISIBILITY" ]; then
+          echo "  \"visibility\" \"$INPUT_VISIBILITY\"" >> workshop.vdf
+        fi
+
+        if [ -n "$INPUT_METADATA" ]; then
+          echo "  \"metadata\" \"${INPUT_METADATA//\"/\\\"}\"" >> workshop.vdf
+        fi
+
+        echo '}' >> workshop.vdf
+        
+        # Output the result to the GitHub Actions console for easy debugging
+        echo "Generated workshop.vdf:"
+        cat workshop.vdf
 
     - name: Run SteamCMD
       shell: bash
@@ -76,5 +141,4 @@ runs:
         echo
         echo ~/Steam/workshopbuilds/depot_build_4000.log
         echo "$(cat ~/Steam/workshopbuilds/depot_build_4000.log)"
-
         exit 1
