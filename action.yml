@@ -102,7 +102,7 @@ runs:
 
         if [ -n "$FINAL_DESC" ]; then
           # Use printf as it works safer with multi-line text (line breaks in description)
-          printf '  "description" "%%s"\n' "${FINAL_DESC//\"/\\\"}" >> workshop.vdf
+          printf '  "description" "%s"\n' "${FINAL_DESC//\"/\\\"}" >> workshop.vdf
         fi
 
         if [ -n "$INPUT_PREVIEWFILE" ]; then
