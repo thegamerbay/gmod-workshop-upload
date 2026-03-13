@@ -2,7 +2,7 @@ name: Lint Workflows and Action
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
     paths:
       - '**.yml'
       - '**.yaml'
