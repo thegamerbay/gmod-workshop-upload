@@ -1,6 +1,9 @@
 # Garry's Mod Workshop Upload Action
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/thegamerbay/gmod-workshop-upload)](https://github.com/thegamerbay/gmod-workshop-upload/releases)
+[![Lint Workflows and Action](https://github.com/thegamerbay/gmod-workshop-upload/actions/workflows/lint.yml/badge.svg)](https://github.com/thegamerbay/gmod-workshop-upload/actions/workflows/lint.yml)
+[![Update Major Tag](https://github.com/thegamerbay/gmod-workshop-upload/actions/workflows/update-major-tag.yml/badge.svg)](https://github.com/thegamerbay/gmod-workshop-upload/actions/workflows/update-major-tag.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 > **Note:** This is a fork of the original action by [vurvdev/gmod-upload](https://github.com/vurvdev/gmod-upload).
 

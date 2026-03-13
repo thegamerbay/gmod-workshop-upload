@@ -1,0 +1,27 @@
+name: Lint Workflows and Action
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.yml'
+      - '**.yaml'
+  pull_request:
+    paths:
+      - '**.yml'
+      - '**.yaml'
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run actionlint
+        uses: reviewdog/action-actionlint@v1
+        with:
+          fail_level: any
+          # Actionlint checks both .github/workflows/*.yml and action.yml
+          filter_mode: nofilter
+          level: error
