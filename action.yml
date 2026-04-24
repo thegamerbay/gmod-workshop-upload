@@ -58,7 +58,7 @@ runs:
         curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf - -C ~/Steam
 
     - name: Setup Lua
-      uses: leafo/gh-actions-lua@v12
+      uses: leafo/gh-actions-lua@v13
       with:
           luaVersion: "5.3"
 
